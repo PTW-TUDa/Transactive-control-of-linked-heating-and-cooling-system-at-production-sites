@@ -1,7 +1,7 @@
 Transactive control of linked heating and cooling system at production sites
 ============================================================================
 
-The *Transactive control of linked heating and cooling system at production sites* repository, developed by Fabian Borst as a member of the team of the `ETA-Fabrik <https://www.ptw.tu-darmstadt.de>`_ at Technical University of Darmstadt, is a python project implementing a multi agent system for the transactive control of the thermal supply systems. The concept is part of the correponding doctoral dissertation and validated for the supply systems at the ETA Research factory.
+The *Transactive control of linked heating and cooling system at production sites* repository, developed by Fabian Borst as a member of the team of the `ETA-Fabrik <https://www.ptw.tu-darmstadt.de>`_ at Technical University of Darmstadt, is a python project implementing a multi agent system for the transactive control of the thermal supply systems. The concept is part of the corresponding doctoral dissertation and validated for the supply systems at the ETA Research factory.
 
 Project structure
 -----------------
