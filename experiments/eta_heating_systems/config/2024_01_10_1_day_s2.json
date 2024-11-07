@@ -1,0 +1,734 @@
+{
+    "setup": {
+        "environment_import": "environment.eta_heating_systems.EtaHeatingSystems",
+        "agent_import": "controller.eta_heating_systems_mas.EtaHeatingSystemsMas",
+        "norm_wrapper_obs": false,
+        "norm_wrapper_reward": false
+    },
+    "paths": {
+        "relpath_results": "results/"
+    },
+    "settings": {
+        "sampling_time": 30,
+        "episode_duration": 86400,
+        "sim_steps_per_sample": 1,
+        "n_episodes_play": 1,
+        "n_environments": 1,
+        "verbose": 2,
+        "seed": 123
+    },
+    "environment_specific": {
+        "scenario_time_begin": "2024-01-10 00:00",
+        "scenario_time_end": "2024-01-11 00:00",
+        "date_format": "%Y-%m-%d %H:%M",
+        "products": [[900,3600],[[0],[0,3600,7200]]],
+        "sampling_time": 30,
+        "ambient_temperature": "experiments/eta_heating_systems/common/global_parameters_10_01_2024.xlsx",
+        "electricity_demand": "experiments/eta_heating_systems/common/global_parameters_10_01_2024.xlsx",
+        "cost_electricity": 0.23,
+        "chp_renumeration": 0.12,
+        "cost_fuel": 0.07,
+        "temperature_limits_HNHT": [50,80],
+        "temperature_limits_HNLT": [30,50],
+        "temperature_limits_CN": [5,25],
+        "positive_market_limit": 0.3,
+        "negative_market_limit": -0.3,
+        "is_benchmark_scenario": false,
+        "is_power_controlled": true,
+        "heating_mode": true,
+        "production_mode": true,
+        "is_live_env": false
+    },
+    "agents": [
+        {
+            "name": "HNHT",
+            "type": "market",
+            "config": {
+                "base_config": {
+                    "connections_markets": [],
+                    "connections_traders": ["BufferStorage_HNHT","CHP1System","CHP2System","CondensingBoilerSystem","StaticHeatingSystem","CentralMachineHeatingSystem","VSIStorageSystem","HeatExchanger1System","HeatPump1System"],
+                    "env_inputs": {},
+                    "env_outputs": {}
+                },
+                "pricing_config":{
+                    "model_type": "double_auction_uniform_pricing",
+                    "model_parameters": {}
+                }
+            }
+        },
+        {
+            "name": "HNLT",
+            "type": "market",
+            "config": {
+                "base_config": {
+                    "connections_markets": [],
+                    "connections_traders": ["BufferStorage_HNLT","CompressorSystem","HVFASystem_HNLT","OuterCapillaryTubeMats","UnderfloorHeatingSystem","InnerCapillaryTubeMats","HeatExchanger1System","HeatPump1System","HeatPump2System"],
+                    "env_inputs": {},
+                    "env_outputs": {}
+                },
+                "pricing_config":{
+                    "model_type": "double_auction_uniform_pricing",
+                    "model_parameters": {}
+                }
+            }
+        },
+        {
+            "name": "CN",
+            "type": "market",
+            "config": {
+                "base_config": {
+                    "connections_markets": [],
+                    "connections_traders": ["BufferStorage_CN","UnderfloorHeatingSystem","InnerCapillaryTubeMats","eChillerSystem","HVFASystem_CN","CentralMachineCoolingSystem","HeatPump2System"],
+                    "env_inputs": {},
+                    "env_outputs": {}
+                },
+                "pricing_config":{
+                    "model_type": "double_auction_uniform_pricing",
+                    "model_parameters": {}
+                }
+            }
+        },
+        {
+            "name": "BufferStorage_HNHT",
+            "type": "system_operator",
+            "config":{
+                "base_config": {
+                    "connections_markets": ["HNHT"],
+                    "connections_traders": ["CHP1System","CHP2System","CondensingBoilerSystem","StaticHeatingSystem","CentralMachineHeatingSystem","VSIStorageSystem","HeatExchanger1System","HeatPump1System"],
+                    "env_inputs": {
+                        "fUpperTemperature": "HNHT.localState.fUpperTemperature",
+                        "fLowerTemperature": "HNHT.localState.fLowerTemperature"
+                    },
+                    "env_outputs": {}
+                },
+                "model_config":{
+                    "pricing_model": "thermal_network_pricing",
+                    "capacity_model": "thermal_network",
+                    "model_parameters": {
+                        "soc_range": [0,1],
+                        "buy_product_allocation": [[1],[0,0,0]],
+                        "sell_product_allocation": [[1],[0,0,0]],
+                        "min_acceptance_ratio": 0,
+                        "target_temperature": 65,
+                        "temperature_limits": [60,70],
+                        "heat_capacity": 4180
+                    }
+                }
+            }
+        },
+        {
+            "name": "VSIStorageSystem",
+            "type": "storage",
+            "config":{
+                "base_config": {
+                    "connections_markets": ["HNHT"],
+                    "connections_traders": [],
+                    "env_inputs": {
+                        "fUpperTemperature": "HNHT.VSIStorageSystem.VSIStorage.localState.fUpperTemperature",
+                        "fLowerTemperature": "HNHT.VSIStorageSystem.VSIStorage.localState.fLowerTemperature",
+                        "fFeedTemperature": "HNHT.localState.fUpperTemperature",
+                        "fReturnTemperature": "HNHT.localState.fLowerTemperature"
+                    },
+                    "env_outputs": {
+                        "bSetStatusOn": "HNHT.VSIStorageSystem.SV307.control.bSetStatusOnAlgorithm", 
+                        "fSetPoint": "HNHT.VSIStorageSystem.SV307.setSetPoint.fSetPointAlgorithm",
+                        "bLoading": "HNHT.VSIStorageSystem.localSetParameters.bLoadingAlgorithm"
+                    }
+                },
+                "model_config":{
+                    "pricing_model": "storage_pricing",
+                    "capacity_model": "storage",
+                    "model_parameters": {
+                        "is_heat_storage": true,
+                        "soc_range": [0,1],
+                        "buy_product_allocation": [[0],[0.5,0.5,0.5]],
+                        "market_limit_ratio": 0.5,
+                        "sell_product_allocation": [[1],[0,0,0]],
+                        "min_acceptance_ratio": 0,
+                        "temperature_limits": [60,70],
+                        "heat_capacity": 29260
+                    }
+                }
+            }
+        },
+        {
+            "name": "CHP1System",
+            "type": "converter",
+            "config":{
+                "base_config": {
+                    "connections_markets": ["HNHT"],
+                    "connections_traders": [],
+                    "env_inputs":{
+                        "fHeatEnergy": "HNHT.CHP1System.WMZ32x.sensorState.fHeatEnergy", 
+                        "fReturnTemperature": "HNHT.localState.fLowerTemperature",
+                        "fFeedTemperature": "fFeedTemperature_HNHT"
+                    },
+                    "env_outputs":{
+                        "bSetStatusOn": "HNHT.CHP1System.RV32x.control.bSetStatusOnAlgorithm", 
+                        "fSetPoint": "HNHT.CHP1System.RV32x.setSetPoint.fSetPointAlgorithm"
+                    }
+                },
+                "model_config":{
+                    "pricing_model": "heat_producer_pricing",
+                    "capacity_model": "heating_utility",
+                    "model_parameters": {
+                        "cost_operating_hours": 0.4,
+                        "cost_ramp_up": 0.14,
+                        "min_acceptance_ratio": 1,
+                        "product_allocation": [[0],[1,1,1]],
+                        "thermal_efficiencies": [[30,40,50,60,65],[0.68,0.66,0.59,0.55,0.53]],
+                        "electric_efficiencies": [[0.5,0.75,1],[0.2,0.23,0.27]],
+                        "nominal_fuel_power": 22.2,
+                        "minimal_load": 0.5,
+                        "bid_discretization": 1
+                    }
+                }
+            }
+        },
+        {
+            "name": "CHP2System",
+            "type": "converter",
+            "config":{
+                "base_config": {
+                    "connections_markets": ["HNHT"],
+                    "connections_traders": [],
+                    "env_inputs": {
+                        "fHeatEnergy": "HNHT.CHP2System.WMZ32x.sensorState.fHeatEnergy", 
+                        "fReturnTemperature": "HNHT.localState.fLowerTemperature",
+                        "fFeedTemperature": "fFeedTemperature_HNHT"
+                    },
+                    "env_outputs": {
+                        "bSetStatusOn": "HNHT.CHP2System.RV32x.control.bSetStatusOnAlgorithm", 
+                        "fSetPoint": "HNHT.CHP2System.RV32x.setSetPoint.fSetPointAlgorithm"
+                    }
+                },
+                "model_config":{
+                    "pricing_model": "heat_producer_pricing",
+                    "capacity_model": "heating_utility",
+                    "model_parameters": {
+                        "cost_operating_hours": 0.4,
+                        "cost_ramp_up": 0.16,
+                        "min_acceptance_ratio": 1,
+                        "product_allocation": [[0],[1,1,1]],
+                        "thermal_efficiencies": [[30,40,50,60,65],[0.68,0.66,0.59,0.55,0.53]],
+                        "electric_efficiencies": [[0.5,0.75,1],[0.24,0.27,0.28]],
+                        "nominal_fuel_power": 30.1,
+                        "minimal_load": 0.5,
+                        "bid_discretization": 1
+                    }
+                }
+            }
+        },
+        {
+            "name": "CondensingBoilerSystem",
+            "type": "converter",
+            "config":{
+                "base_config": {
+                    "connections_markets": ["HNHT"],
+                    "connections_traders": [],
+                    "env_inputs": {
+                        "fHeatEnergy": "HNHT.CondensingBoilerSystem.WMZ331.sensorState.fHeatEnergy", 
+                        "fReturnTemperature": "HNHT.localState.fLowerTemperature",
+                        "fFeedTemperature": "fFeedTemperature_HNHT"
+                    },
+                    "env_outputs": {
+                        "bSetStatusOn": "HNHT.CondensingBoilerSystem.RV331.control.bSetStatusOnAlgorithm", 
+                        "fSetPoint": "HNHT.CondensingBoilerSystem.RV331.setSetPoint.fSetPointAlgorithm"
+                    }
+                },
+                "model_config":{
+                    "pricing_model": "heat_producer_pricing",
+                    "capacity_model": "heating_utility",
+                    "model_parameters": {
+                        "cost_operating_hours": 0.3,
+                        "cost_ramp_up": 0.07,
+                        "min_acceptance_ratio": 0.9,
+                        "product_allocation": [[1],[1,1,1]],
+                        "thermal_efficiencies": [[10,30,60],[1,1,0.95]],
+                        "electric_efficiencies": [[0,1],[0,0]],
+                        "nominal_fuel_power": 26,
+                        "minimal_load": 0.2,
+                        "bid_discretization": 20
+                    }
+                }
+            }
+        },
+        {
+            "name": "StaticHeatingSystem",
+            "type": "consumer",
+            "config":{
+                "base_config": {
+                    "connections_markets": ["HNHT"],
+                    "connections_traders": [],
+                    "env_inputs": {
+                        "fHeatEnergy": "HNHT.StaticHeatingSystem.WMZ350.sensorState.fHeatEnergy", 
+                        "fRoomTemperature": "HNHT.StaticHeatingSystem.ConsumerTemperature.Celsius",
+                        "bHeatingMode": "Strategy.localSetParameters.bHeatingModeActivated"
+                    },
+                    "env_outputs": {
+                        "bSetStatusOn": "HNHT.StaticHeatingSystem.RV350.control.bSetStatusOnAlgorithm", 
+                        "fSetPoint": "HNHT.StaticHeatingSystem.RV350.setSetPoint.fSetPointAlgorithm"}
+                },
+                "model_config":{
+                    "pricing_model": "inherent_storage_pricing",
+                    "capacity_model": "demand_building",
+                    "model_parameters": {
+                        "min_acceptance_ratio": 0,
+                        "soc_range": [0,1],
+                        "product_allocation": [[0],[0,0,0]],
+                        "target_temperature": 19,
+                        "thermal_resistance_to_ambient": 3,
+                        "heat_capacity": 4230,
+                        "temperature_limits": [18,20]
+                    }
+                }
+            }
+        },
+        {
+            "name": "CentralMachineHeatingSystem",
+            "type": "consumer",
+            "config":{
+                "base_config": {
+                    "connections_markets": ["HNHT"],
+                    "connections_traders": [],
+                    "env_inputs": {
+                        "fHeatEnergy": "HNHT.CentralMachineHeatingSystem.WMZ300.sensorState.fHeatEnergy"
+                    },
+                    "env_outputs": {
+                        "bSetStatusOn": "HNHT.CentralMachineHeatingSystem.PU300.control.bSetStatusOnAlgorithm", 
+                        "fSetPoint": "HNHT.CentralMachineHeatingSystem.PU300.setSetPoint.fSetPointAlgorithm"}
+                },
+                "model_config":{
+                    "pricing_model": "demand_pricing",
+                    "capacity_model": "demand_prescribed",
+                    "model_parameters": {
+                        "min_acceptance_ratio": 0,
+                        "product_allocation": [[0],[0,0,0]],
+                        "demand": "experiments/eta_heating_systems/common/demands_quarterhour_2024.xlsx"  
+                    }
+                }
+            }
+        },
+        {
+            "name": "HeatExchanger1System",
+            "type": "heat_exchanger",
+            "config":{
+                "base_config": {
+                    "connections_markets": ["HNHT","HNLT"],
+                    "connections_traders": [],
+                    "env_inputs":{
+                        "fHeatEnergy": "HNHT_HNLT.HeatExchanger1System.WMZ215.sensorState.fHeatEnergy", 
+                        "fFeedTemperature_hot": "HNHT.localState.fUpperTemperature",
+                        "fReturnTemperature_cold": "HNLT.localState.fLowerTemperature"
+                    },
+                    "env_outputs":{
+                        "bSetStatusOn": "HNHT_HNLT.HeatExchanger1System.RV315.control.bSetStatusOnAlgorithm", 
+                        "fSetPoint": "HNHT_HNLT.HeatExchanger1System.RV315.setSetPoint.fSetPointAlgorithm"
+                    }
+                },
+                "model_config":{
+                    "pricing_model": "heat_exchanger_pricing",
+                    "capacity_model": "heat_exchanger",
+                    "model_parameters": {
+                        "additional_producer": false,
+                        "heating_use_case": true,
+                        "min_acceptance_ratio": 0.5,
+                        "product_allocation": [[1],[1,0,0]],
+                        "max_capacity_flow_hot": 2.9,
+                        "max_capacity_flow_cold": 3.8,
+                        "heat_transfer_coefficient": 1.49,
+                        "heat_exchanger_area": 1.12,
+                        "bid_discretization": 1
+                    }
+                }
+            }
+        },
+        {
+            "name": "HeatPump1System",
+            "type": "heat_pump",
+            "config":{
+                "base_config": {
+                    "connections_markets": ["HNHT","HNLT"],
+                    "connections_traders": [],
+                    "env_inputs":{
+                        "fHeatEnergy": "HNHT_HNLT.HeatPump1System.WMZ342.sensorState.fHeatEnergy",
+                        "fHeatFlowRate": "HNHT_HNLT.HeatPump1System.WMZ342.sensorState.fHeatFlowRate",
+                        "fElectricPower": "HNHT_HNLT.HeatPump1System.P_el",
+                        "fReturnTemperature_hot": "HNHT.localState.fLowerTemperature",
+                        "fReturnTemperature_cold": "HNHT_HNLT.HeatPump1System.fReturnTemperature_cold.Celsius",
+                        "fFeedTemperature": "fFeedTemperature_HNHT"
+                    },
+                    "env_outputs":{
+                        "bSetStatusOn": "HNHT_HNLT.HeatPump1System.RV342.control.bSetStatusOnAlgorithm", 
+                        "fSetPoint": "HNHT_HNLT.HeatPump1System.RV342.setSetPoint.fSetPointAlgorithm"
+                    }
+                },
+                "model_config":{
+                    "pricing_model": "heat_pump_pricing",
+                    "capacity_model": "heat_pump",
+                    "model_parameters": {
+                        "additional_producer": true,
+                        "heating_use_case": true,
+                        "cost_operating_hours": 0.3,
+                        "cost_ramp_up": 0.07,
+                        "min_acceptance_ratio": 0.8,
+                        "product_allocation": [[1],[1,1,1]],
+                        "thermal_efficiencies":[[0,35,45,55,65,72],[-5,0.52,0.46,0.40,0.34,0.29],[0,0.63,0.57,0.57,0.43,0.37],[5,0.78,0.71,0.71,0.55,0.49],[10,0.92,0.85,0.77,0.67,0.6],[15,0.97,1,0.9,0.8,0.71]],
+                        "electric_efficiencies": [[0,35,45,55,65,72],[-5,0.46,0.55,0.65,0.77,0.86],[0,0.50,0.57,0.68,0.8,0.9],[5,0.48,0.58,0.70,0.83,0.93],[10,0.49,0.59,0.71,0.85,0.96],[15,0.5,0.61,0.74,0.88,1]],
+                        "nominal_electric_power": 14.2,
+                        "nominal_cooling_power": 16,
+                        "minimal_load": 0.2,
+                        "bid_discretization": 1
+                    }
+                }
+            }
+        },
+        {
+            "name": "BufferStorage_HNLT",
+            "type": "system_operator",
+            "config":{
+                "base_config": {
+                    "connections_markets": ["HNLT"],
+                    "connections_traders": ["CompressorSystem","HVFASystem_HNLT","OuterCapillaryTubeMats","UnderfloorHeatingSystem","InnerCapillaryTubeMats","HeatExchanger1System","HeatPump1System","HeatPump2System"],
+                    "env_inputs": {
+                        "fUpperTemperature": "HNLT.localState.fUpperTemperature",
+                        "fLowerTemperature": "HNLT.localState.fLowerTemperature"
+                    },
+                    "env_outputs": {}
+                },
+                "model_config":{
+                    "pricing_model": "thermal_network_pricing",
+                    "capacity_model": "thermal_network",
+                    "model_parameters": {
+                        "soc_range": [0,1],
+                        "buy_product_allocation": [[1],[0,0,0]],
+                        "sell_product_allocation": [[1],[0,0,0]],
+                        "min_acceptance_ratio": 0,
+                        "target_temperature": 40,
+                        "temperature_limits": [35,45],
+                        "heat_capacity": 4180
+                    }
+                }
+            }
+        },
+        {
+            "name": "HVFASystem_HNLT",
+            "type": "storage",
+            "config":{
+                "base_config": {
+                    "connections_markets": ["HNLT"],
+                    "connections_traders": [],
+                    "env_inputs": {
+                        "fUpperTemperature": "HNLT.HVFASystem.HVFAStorage.localState.fUpperTemperature",
+                        "fLowerTemperature": "HNLT.HVFASystem.HVFAStorage.localState.fLowerTemperature",
+                        "fFeedTemperature": "HNLT.localState.fUpperTemperature",
+                        "fReturnTemperature": "HNLT.localState.fLowerTemperature"
+                    },
+                    "env_outputs": {
+                        "bSetStatusOn": "HNLT.HVFASystem.RVx05.control.bSetStatusOnAlgorithm", 
+                        "fSetPoint": "HNLT.HVFASystem.RVx05.setSetPoint.fSetPointAlgorithm",
+                        "bLoading": "HNLT.HVFASystem.localSetParameters.bLoadingAlgorithm"
+                    }
+                },
+                "model_config":{
+                    "pricing_model": "storage_pricing",
+                    "capacity_model": "storage",
+                    "model_parameters": {
+                        "is_heat_storage": true,
+                        "soc_range": [0,1],
+                        "buy_product_allocation": [[0],[0.05,0.05,0.05]],
+                        "market_limit_ratio": 0.5,
+                        "sell_product_allocation": [[1],[0,0,0]],
+                        "min_acceptance_ratio": 0,
+                        "temperature_limits": [35,45],
+                        "heat_capacity": 105000
+                    }
+                }
+            }
+        },
+        {
+            "name": "CompressorSystem",
+            "type": "consumer",
+            "config":{
+                "base_config": {
+                    "connections_markets": ["HNLT"],
+                    "connections_traders": [],
+                    "env_inputs": {
+                        "fHeatEnergy": "HNLT.CompressorSystem.WMZ251.sensorState.fHeatEnergy"
+                    },
+                    "env_outputs": {
+                        "bSetStatusOn": "HNLT.CompressorSystem.RV251.control.bSetStatusOnAlgorithm", 
+                        "fSetPoint": "HNLT.CompressorSystem.RV251.setSetPoint.fSetPointAlgorithm"}
+                },
+                "model_config":{
+                    "pricing_model": "demand_pricing",
+                    "capacity_model": "demand_prescribed",
+                    "model_parameters": {
+                        "min_acceptance_ratio": 0,
+                        "product_allocation": [[0],[0,0,0]],
+                        "demand": "experiments/eta_heating_systems/common/demands_quarterhour_2024.xlsx"   
+                    }
+                }
+            }
+        },
+        {
+            "name": "OuterCapillaryTubeMats",
+            "type": "converter",
+            "config":{
+                "base_config": {
+                    "connections_markets": ["HNLT"],
+                    "connections_traders": [],
+                    "env_inputs": {
+                        "fHeatEnergy": "HNLT.OuterCapillaryTubeMats.WMZ235.sensorState.fHeatEnergy",
+                        "fReturnTemperature": "HNLT.localState.fUpperTemperature",
+                        "fFeedTemperature": "Ambient.localState.fOutsideTemperature"
+                    },
+                    "env_outputs": {
+                        "bSetStatusOn": "HNLT.OuterCapillaryTubeMats.RV600.control.bSetStatusOnAlgorithm", 
+                        "fSetPoint": "HNLT.OuterCapillaryTubeMats.RV600.setSetPoint.fSetPointAlgorithm"
+                    }
+                },
+                "model_config":{
+                    "pricing_model": "cool_producer_pricing",
+                    "capacity_model": "cooling_utility",
+                    "model_parameters": {
+                        "cost_operating_hours": 0,
+                        "cost_ramp_up": 0,
+                        "min_acceptance_ratio": 0.3,
+                        "product_allocation": [[1],[1,1,1]],
+                        "thermal_efficiencies": [[14,17,23,29,35],[203,178,134,88,39]],
+                        "electric_efficiencies": [[0,1],[0.65,0.65]],
+                        "nominal_electric_power": 0.35,
+                        "minimal_load": 0.025,
+                        "bid_discretization": 1
+   
+                    }
+                }
+            }
+        },
+        {
+            "name": "UnderfloorHeatingSystem",
+            "type": "consumer",
+            "config":{
+                "base_config": {
+                    "connections_markets": ["HNLT","CN"],
+                    "connections_traders": [],
+                    "env_inputs": {
+                        "fHeatEnergy": "HNLT_CN.UnderfloorHeatingSystem.WMZ425.sensorState.fHeatEnergy", 
+                        "fRoomTemperature": "HNLT_CN.UnderfloorHeatingSystem.ConsumerTemperature.Celsius",
+                        "bHeatingMode": "Strategy.localSetParameters.bHeatingModeActivated"
+                    },
+                    "env_outputs": {
+                        "bSetStatusOn": "HNLT_CN.UnderfloorHeatingSystem.RV425.control.bSetStatusOnAlgorithm", 
+                        "fSetPoint": "HNLT_CN.UnderfloorHeatingSystem.RV425.setSetPoint.fSetPointAlgorithm"}
+                },
+                "model_config":{
+                    "pricing_model": "inherent_storage_pricing",
+                    "capacity_model": "demand_building",
+                    "model_parameters": {
+                        "min_acceptance_ratio": 0,
+                        "soc_range": [0,1],
+                        "product_allocation": [[0],[0,0,0]],
+                        "target_temperature": 19,
+                        "thermal_resistance_to_ambient": 3,
+                        "heat_capacity": 7200,
+                        "temperature_limits": [18,20]
+                    }
+                }
+            }
+        },
+        {
+            "name": "InnerCapillaryTubeMats",
+            "type": "consumer",
+            "config":{
+                "base_config": {
+                    "connections_markets": ["HNLT","CN"],
+                    "connections_traders": [],
+                    "env_inputs": {
+                        "fHeatEnergy": "HNLT_CN.InnerCapillaryTubeMats.WMZ405.sensorState.fHeatEnergy", 
+                        "fRoomTemperature": "HNLT_CN.InnerCapillaryTubeMats.setPointState.fOperatingPoint",
+                        "bHeatingMode": "Strategy.localSetParameters.bHeatingModeActivated"
+                    },
+                    "env_outputs": {
+                        "bSetStatusOn": "HNLT_CN.InnerCapillaryTubeMats.RV500.control.bSetStatusOnAlgorithm", 
+                        "fSetPoint": "HNLT_CN.InnerCapillaryTubeMats.RV500.setSetPoint.fSetPointAlgorithm"}
+                },
+                "model_config":{
+                    "pricing_model": "inherent_storage_pricing",
+                    "capacity_model": "demand_building",
+                    "model_parameters": {
+                        "min_acceptance_ratio": 0,
+                        "soc_range": [0,1],
+                        "product_allocation": [[0],[0,0,0]],
+                        "target_temperature": 19,
+                        "thermal_resistance_to_ambient": 1,
+                        "heat_capacity": 132000,
+                        "temperature_limits": [18,20]
+                    }
+                }
+            }
+        },
+        {
+            "name": "HeatPump2System",
+            "type": "heat_pump",
+            "config":{
+                "base_config": {
+                    "connections_markets": ["HNLT","CN"],
+                    "connections_traders": [],
+                    "env_inputs":{
+                        "fHeatEnergy": "HNLT_CN.HeatPump2System.WMZ246.sensorState.fHeatEnergy",
+                        "fHeatFlowRate": "HNLT_CN.HeatPump2System.WMZ246.sensorState.fHeatFlowRate",
+                        "fElectricPower": "HNLT_CN.HeatPump2System.P_el",
+                        "fReturnTemperature_hot": "HNLT.localState.fLowerTemperature",
+                        "fReturnTemperature_cold": "CN.localState.fUpperTemperature",
+                        "fFeedTemperature": "fFeedTemperature_HNLT_Heating"
+                    },
+                    "env_outputs":{
+                        "bSetStatusOn": "HNLT_CN.HeatPump2System.control.bSetStatusOnAlgorithm", 
+                        "fSetPoint": "HNLT_CN.HeatPump2System.setSetPoint.fSetPointAlgorithm"
+                    }
+                },
+                "model_config":{
+                    "pricing_model": "heat_pump_pricing",
+                    "capacity_model": "heat_pump",
+                    "model_parameters": {
+                        "additional_producer": true,
+                        "heating_use_case": true,
+                        "cost_operating_hours": 0.3,
+                        "cost_ramp_up": 0.07,
+                        "min_acceptance_ratio": 1,
+                        "product_allocation": [[1],[1,1,1]],
+                        "thermal_efficiencies":[[0,35,45,55,65,72],[-5,0.52,0.46,0.40,0.34,0.29],[0,0.63,0.57,0.57,0.43,0.37],[5,0.78,0.71,0.71,0.55,0.49],[10,0.92,0.85,0.77,0.67,0.6],[15,0.97,1,0.9,0.8,0.71]],
+                        "electric_efficiencies": [[0,35,45,55,65,72],[-5,0.46,0.55,0.65,0.77,0.86],[0,0.50,0.57,0.68,0.8,0.9],[5,0.48,0.58,0.70,0.83,0.93],[10,0.49,0.59,0.71,0.85,0.96],[15,0.5,0.61,0.74,0.88,1]],
+                        "nominal_electric_power": 3.34,
+                        "nominal_cooling_power": 9.15,                   
+                        "minimal_load": 1,
+                        "bid_discretization": 1
+                    }
+                }
+            }
+        },
+        {
+            "name": "BufferStorage_CN",
+            "type": "system_operator",
+            "config":{
+                "base_config": {
+                    "connections_markets": ["CN"],
+                    "connections_traders": ["UnderfloorHeatingSystem","InnerCapillaryTubeMats","eChillerSystem","HVFASystem_CN","CentralMachineCoolingSystem","HeatPump2System"],
+                    "env_inputs": {
+                        "fUpperTemperature": "CN.localState.fUpperTemperature",
+                        "fLowerTemperature": "CN.localState.fLowerTemperature"
+                    },
+                    "env_outputs": {}
+                },
+                "model_config":{
+                    "pricing_model": "thermal_network_pricing",
+                    "capacity_model": "thermal_network",
+                    "model_parameters": {
+                        "soc_range": [0,1],
+                        "buy_product_allocation": [[1],[0,0,0]],
+                        "sell_product_allocation": [[1],[0,0,0]],
+                        "min_acceptance_ratio": 0,
+                        "target_temperature": 17.5,
+                        "temperature_limits": [10,25],
+                        "heat_capacity": 4180
+                    }
+                }
+            }
+        },
+        {
+            "name": "HVFASystem_CN",
+            "type": "storage",
+            "config":{
+                "base_config": {
+                    "connections_markets": ["CN"],
+                    "connections_traders": [],
+                    "env_inputs": {
+                        "fUpperTemperature": "CN.HVFASystem.HVFAStorage.localState.fUpperTemperature",
+                        "fLowerTemperature": "CN.HVFASystem.HVFAStorage.localState.fLowerTemperature",
+                        "fFeedTemperature": "CN.localState.fUpperTemperature",
+                        "fReturnTemperature": "CN.localState.fLowerTemperature"
+                    },
+                    "env_outputs": {
+                        "bSetStatusOn": "CN.HVFASystem.RVx05.control.bSetStatusOnAlgorithm", 
+                        "fSetPoint": "CN.HVFASystem.RVx05.setSetPoint.fSetPointAlgorithm",
+                        "bLoading": "CN.HVFASystem.localSetParameters.bLoadingAlgorithm"
+                    }
+                },
+                "model_config":{
+                    "pricing_model": "storage_pricing",
+                    "capacity_model": "storage",
+                    "model_parameters": {
+                        "is_heat_storage": false,
+                        "soc_range": [0,1],
+                        "buy_product_allocation": [[1],[0,0,0]],
+                        "market_limit_ratio": 0.5,
+                        "sell_product_allocation": [[0],[0.05,0.05,0.05]],
+                        "min_acceptance_ratio": 0,
+                        "temperature_limits": [10,17],
+                        "heat_capacity": 105000
+                    }
+                }
+            }
+        },
+        {
+            "name": "CentralMachineCoolingSystem",
+            "type": "consumer",
+            "config":{
+                "base_config": {
+                    "connections_markets": ["CN"],
+                    "connections_traders": [],
+                    "env_inputs": {
+                        "fHeatEnergy": "CN.CentralMachineCoolingSystem.WMZ100.sensorState.fHeatEnergy"
+                    },
+                    "env_outputs": {
+                        "bSetStatusOn": "CN.CentralMachineCoolingSystem.PU100.control.bSetStatusOnAlgorithm", 
+                        "fSetPoint": "CN.CentralMachineCoolingSystem.PU100.setSetPoint.fSetPointAlgorithm"}
+                },
+                "model_config":{
+                    "pricing_model": "demand_pricing",
+                    "capacity_model": "demand_prescribed",
+                    "model_parameters": {
+                        "min_acceptance_ratio": 0,
+                        "product_allocation": [[0],[0,0,0]],
+                        "demand": "experiments/eta_heating_systems/common/demands_quarterhour_2024.xlsx"   
+                    }
+                }
+            }
+        },
+        {
+            "name": "eChillerSystem",
+            "type": "converter",
+            "config":{
+                "base_config": {
+                    "connections_markets": ["CN"],
+                    "connections_traders": [],
+                    "env_inputs": {
+                        "fHeatEnergy": "CN.eChillerSystem.WMZ138.sensorState.fHeatEnergy",
+                        "fReturnTemperature": "CN.localState.fUpperTemperature",
+                        "fFeedTemperature": "fFeedTemperature_CN"
+                    },
+                    "env_outputs": {
+                        "bSetStatusOn": "CN.eChillerSystem.SV138.control.bSetStatusOnAlgorithm", 
+                        "fSetPoint": "CN.eChillerSystem.SV138.setSetPoint.fSetPointAlgorithm"
+                    }
+                },
+                "model_config":{
+                    "pricing_model": "cool_producer_pricing",
+                    "capacity_model": "cooling_utility",
+                    "model_parameters": {
+                        "cost_operating_hours": 0.1,
+                        "cost_ramp_up": 0.03,
+                        "min_acceptance_ratio": 0.1,
+                        "product_allocation": [[1],[1,1,1]],
+                        "thermal_efficiencies": [[14,17,23,29,35],[18,16,7,4,3.5]],
+                        "electric_efficiencies": [[0,1],[1,1]],
+                        "nominal_electric_power": 4.9,
+                        "minimal_load": 0,
+                        "bid_discretization": 1     
+                    }
+                }
+            }
+        }
+    ]
+}

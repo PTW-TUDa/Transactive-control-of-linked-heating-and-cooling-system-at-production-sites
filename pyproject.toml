@@ -1,0 +1,63 @@
+[build-system]
+requires = ["setuptools>=45<67", "wheel", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "src"
+authors = [
+    {"name" = "Fabian Borst", "email" = "f.borst@ptw.tu-darmstadt.de"}
+]
+description = "Disseration - Multi-Agent System for IESS control"
+keywords = [
+    "multi-agent system","simulation","opcua"
+]
+license = {file = "LICENSE"}
+# We're using some functionality from python 3.7 (therefore this is the minimum)
+# and pytorch does not support Versions >3.10 (therefore this is the maximum).
+requires-python = ">=3.7, <=3.10"
+classifiers = [
+    "License :: OSI Approved :: BSD License",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Manufacturing",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+]
+dynamic = ["version", "readme"]
+dependencies = [
+    "setuptools",
+    "attrs",
+    "numpy",
+    "pandas",
+    "opcua",
+    "cryptography",
+    # Lower versions of fmpy have problems with setting parameters during initialization:
+    "fmpy>=0.3.5",
+]
+
+[tool.setuptools.dynamic]
+version = {attr = "src._version.__version__"}
+readme = {file = ["README.md", "LICENSE"]}
+
+[project.urls]
+Homepage = "https://www.ptw.tu-darmstadt.de"
+
+[tool.setuptools.packages.find]
+include = ["eta_utility*"]
+exclude = [
+    "test*"
+]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.pytest.ini_options]
+log_cli = true
+testpaths = [
+    "test",
+]

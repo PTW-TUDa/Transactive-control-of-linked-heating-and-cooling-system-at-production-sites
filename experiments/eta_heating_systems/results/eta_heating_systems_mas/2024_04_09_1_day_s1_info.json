@@ -1,0 +1,107 @@
+{
+    "series": "eta_heating_systems_mas",
+    "name": "2024_04_09_1_day_s1",
+    "description": "",
+    "path_root": "c:\\LiveExperimente\\F.Borst\\dissertation_fbo_mas\\experiments\\eta_heating_systems",
+    "path_results": "c:\\LiveExperimente\\F.Borst\\dissertation_fbo_mas\\experiments\\eta_heating_systems\\results",
+    "path_scenarios": null,
+    "path_series_results": "c:\\LiveExperimente\\F.Borst\\dissertation_fbo_mas\\experiments\\eta_heating_systems\\results\\eta_heating_systems_mas",
+    "path_run_model": "c:\\LiveExperimente\\F.Borst\\dissertation_fbo_mas\\experiments\\eta_heating_systems\\results\\eta_heating_systems_mas\\2024_04_09_1_day_s1_model.zip",
+    "path_run_info": "c:\\LiveExperimente\\F.Borst\\dissertation_fbo_mas\\experiments\\eta_heating_systems\\results\\eta_heating_systems_mas\\2024_04_09_1_day_s1_info.json",
+    "path_run_monitor": "c:\\LiveExperimente\\F.Borst\\dissertation_fbo_mas\\experiments\\eta_heating_systems\\results\\eta_heating_systems_mas\\2024_04_09_1_day_s1_monitor.csv",
+    "path_vec_normalize": "c:\\LiveExperimente\\F.Borst\\dissertation_fbo_mas\\experiments\\eta_heating_systems\\results\\eta_heating_systems_mas\\vec_normalize.pkl",
+    "path_net_arch": "c:\\LiveExperimente\\F.Borst\\dissertation_fbo_mas\\experiments\\eta_heating_systems\\results\\eta_heating_systems_mas\\net_arch.txt",
+    "path_log_output": "c:\\LiveExperimente\\F.Borst\\dissertation_fbo_mas\\experiments\\eta_heating_systems\\results\\eta_heating_systems_mas\\2024_04_09_1_day_s1_log_output.log",
+    "env_version": "v0.1",
+    "env_description": "(c) Fabian Borst",
+    "interaction_env_version": null,
+    "interaction_env_description": null,
+    "config_name": "c:\\LiveExperimente\\F.Borst\\dissertation_fbo_mas\\experiments\\eta_heating_systems\\config\\2024_04_09_1_day_s1.json",
+    "relpath_results": "results/",
+    "relpath_scenarios": null,
+    "setup": {
+        "agent_import": "controller.eta_heating_systems_mas.EtaHeatingSystemsMas",
+        "agent_class": null,
+        "environment_import": "environment.eta_heating_systems.EtaHeatingSystems",
+        "environment_class": null,
+        "interaction_env_import": null,
+        "interaction_env_class": null,
+        "vectorizer_import": "stable_baselines3.common.vec_env.dummy_vec_env.DummyVecEnv",
+        "vectorizer_class": null,
+        "policy_import": "eta_utility.eta_x.common.NoPolicy",
+        "policy_class": null,
+        "monitor_wrapper": false,
+        "norm_wrapper_obs": false,
+        "norm_wrapper_reward": false,
+        "tensorboard_log": false
+    },
+    "settings": {
+        "seed": 123,
+        "verbose": 2,
+        "n_environments": 1,
+        "n_episodes_play": 1,
+        "n_episodes_learn": null,
+        "interact_with_env": false,
+        "save_model_every_x_episodes": 1,
+        "plot_interval": 1,
+        "episode_duration": 86400.0,
+        "sampling_time": 30.0,
+        "sim_steps_per_sample": 1,
+        "scale_actions": null,
+        "round_actions": null,
+        "environment": {
+            "scenario_time_begin": "2024-04-09 00:00",
+            "scenario_time_end": "2024-04-10 00:00",
+            "date_format": "%Y-%m-%d %H:%M",
+            "products": [
+                [
+                    900,
+                    3600
+                ],
+                [
+                    [
+                        0
+                    ],
+                    [
+                        0,
+                        3600,
+                        7200
+                    ]
+                ]
+            ],
+            "sampling_time": 30,
+            "ambient_temperature": "experiments/eta_heating_systems/common/global_parameters_09_04_2024.xlsx",
+            "electricity_demand": "experiments/eta_heating_systems/common/global_parameters_09_04_2024.xlsx",
+            "cost_electricity": 0.23,
+            "chp_renumeration": 0.12,
+            "cost_fuel": 0.07,
+            "temperature_limits_HNHT": [
+                50,
+                80
+            ],
+            "temperature_limits_HNLT": [
+                30,
+                50
+            ],
+            "temperature_limits_CN": [
+                5,
+                25
+            ],
+            "positive_market_limit": 0.3,
+            "negative_market_limit": -0.3,
+            "is_benchmark_scenario": false,
+            "is_power_controlled": true,
+            "heating_mode": true,
+            "production_mode": true,
+            "is_live_env": false,
+            "episode_duration": 86400.0,
+            "sim_steps_per_sample": 1
+        },
+        "interaction_env": null,
+        "agent": {
+            "seed": 123,
+            "verbose": 2
+        },
+        "log_to_file": false
+    }
+}
